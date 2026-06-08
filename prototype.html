@@ -1,0 +1,1083 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Spacez ReviewsAI — Operations Command</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0d1117; color: #e6edf3; min-height: 100vh; }
+
+.header { background: #161b22; border-bottom: 1px solid #30363d; padding: 0 32px; height: 56px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+.logo { font-size: 17px; font-weight: 700; letter-spacing: -0.3px; }
+.logo .accent { color: #f0a500; }
+.header-right { display: flex; align-items: center; gap: 16px; font-size: 12px; color: #8b949e; }
+.stakeholder-pill { background: #f0a50020; color: #f0a500; border: 1px solid #f0a50040; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+
+.stats-strip { background: #161b22; border-bottom: 1px solid #30363d; padding: 0 32px; display: flex; align-items: stretch; }
+.stat-item { padding: 14px 24px; border-right: 1px solid #30363d; display: flex; flex-direction: column; gap: 2px; }
+.stat-item:first-child { padding-left: 0; }
+.stat-num { font-size: 22px; font-weight: 700; line-height: 1; }
+.stat-label { font-size: 11px; color: #8b949e; white-space: nowrap; }
+.stat-note { font-size: 10px; color: #f0a500; margin-top: 2px; }
+.critical-num { color: #f85149; }
+.warn-num { color: #f0a500; }
+.muted-num { color: #8b949e; }
+
+.layout { display: flex; height: calc(100vh - 104px); }
+
+.sidebar { width: 190px; background: #161b22; border-right: 1px solid #30363d; padding: 16px 8px; flex-shrink: 0; }
+.nav-section { font-size: 10px; color: #8b949e; text-transform: uppercase; letter-spacing: 0.8px; padding: 0 8px; margin-bottom: 6px; margin-top: 16px; font-weight: 600; }
+.nav-section:first-child { margin-top: 0; }
+.nav-btn { width: 100%; background: none; border: none; color: #8b949e; padding: 8px 10px; border-radius: 6px; cursor: pointer; font-size: 13px; display: flex; align-items: center; gap: 8px; text-align: left; transition: all 0.15s; }
+.nav-btn:hover { background: #21262d; color: #e6edf3; }
+.nav-btn.active { background: #f0a50018; color: #f0a500; font-weight: 600; }
+.nav-count { margin-left: auto; background: #f85149; color: #fff; border-radius: 10px; padding: 1px 6px; font-size: 10px; font-weight: 700; line-height: 1.4; }
+.nav-count.warn { background: #f0a500; color: #000; }
+.nav-count.muted { background: #30363d; color: #8b949e; }
+
+.content { flex: 1; overflow-y: auto; padding: 24px 32px; }
+
+.view { display: none; }
+.view.active { display: block; }
+
+.view-title { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
+.view-subtitle { font-size: 13px; color: #8b949e; margin-bottom: 20px; }
+
+.data-notice { background: #1c2128; border: 1px solid #30363d; border-left: 3px solid #388bfd; border-radius: 8px; padding: 12px 16px; margin-bottom: 20px; font-size: 12px; color: #8b949e; line-height: 1.5; }
+.data-notice strong { color: #e6edf3; }
+
+.section-divider { font-size: 11px; color: #484f58; text-transform: uppercase; letter-spacing: 0.8px; font-weight: 600; padding: 6px 0 10px 0; margin-top: 8px; border-top: 1px solid #21262d; }
+.section-divider:first-of-type { border-top: none; margin-top: 0; }
+
+.issue-card { background: #161b22; border: 1px solid #30363d; border-radius: 10px; margin-bottom: 12px; overflow: hidden; transition: border-color 0.15s; }
+.issue-card:hover { border-color: #484f58; }
+.issue-card.expanded { border-color: #f0a500; }
+.issue-card.sev-critical { border-left: 4px solid #f85149; }
+.issue-card.sev-high { border-left: 4px solid #f0a500; }
+.issue-card.sev-medium { border-left: 4px solid #388bfd; }
+.issue-card.sev-watch { border-left: 4px solid #484f58; }
+
+.issue-top { padding: 14px 16px; cursor: pointer; }
+.issue-row1 { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.sev-badge { padding: 2px 8px; border-radius: 20px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; flex-shrink: 0; }
+.sev-badge.critical { background: #f8514920; color: #f85149; }
+.sev-badge.high { background: #f0a50020; color: #f0a500; }
+.sev-badge.medium { background: #388bfd20; color: #388bfd; }
+.sev-badge.watch { background: #30363d; color: #6e7681; }
+.issue-title { font-size: 14px; font-weight: 600; flex: 1; }
+.issue-count { background: #21262d; border: 1px solid #30363d; padding: 2px 8px; border-radius: 4px; font-size: 11px; color: #8b949e; flex-shrink: 0; }
+
+.issue-row2 { display: flex; gap: 16px; font-size: 12px; color: #8b949e; flex-wrap: wrap; }
+.issue-meta-item { display: flex; align-items: center; gap: 4px; }
+
+.action-box { margin: 0 16px 14px 16px; background: #0d1117; border: 1px solid #30363d; border-left: 3px solid #3fb950; border-radius: 6px; padding: 10px 12px; font-size: 12px; color: #3fb950; display: none; }
+.action-box.show { display: block; }
+.action-label { font-weight: 700; color: #3fb950; margin-bottom: 2px; }
+.action-text { color: #8b949e; }
+
+.resolution-box { margin: 0 16px 14px 16px; background: #0d1117; border: 1px solid #3fb95040; border-left: 3px solid #3fb950; border-radius: 6px; padding: 10px 12px; font-size: 12px; display: none; }
+.resolution-box.show { display: block; }
+.resolution-label { font-weight: 700; color: #3fb950; margin-bottom: 2px; }
+.resolution-text { color: #8b949e; }
+
+.evidence-panel { border-top: 1px solid #21262d; padding: 14px 16px; display: none; }
+.evidence-panel.show { display: block; }
+.evidence-header { font-size: 11px; color: #8b949e; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; font-weight: 600; }
+
+.review-quote { background: #0d1117; border-left: 3px solid #30363d; border-radius: 0 6px 6px 0; padding: 10px 12px; margin-bottom: 8px; }
+.review-quote.positive { border-left-color: #3fb950; }
+.review-text { font-size: 13px; color: #e6edf3; font-style: italic; line-height: 1.5; margin-bottom: 6px; }
+.review-meta { display: flex; align-items: center; gap: 8px; font-size: 11px; color: #8b949e; flex-wrap: wrap; }
+.platform-chip { padding: 1px 6px; border-radius: 3px; font-size: 10px; font-weight: 600; }
+.chip-airbnb { background: #ff5a5f20; color: #ff5a5f; }
+.chip-booking { background: #003da520; color: #5b9bd5; }
+.chip-google { background: #4285f420; color: #4285f4; }
+.rating-raw { color: #8b949e; }
+.rating-norm { color: #f0a500; font-weight: 600; }
+.norm-arrow { color: #8b949e; }
+.flag-note { color: #f0a500; font-size: 10px; }
+
+.property-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; }
+.prop-card { background: #161b22; border: 1px solid #30363d; border-radius: 10px; padding: 18px; }
+.prop-name { font-size: 15px; font-weight: 600; margin-bottom: 2px; }
+.prop-location { font-size: 11px; color: #484f58; margin-bottom: 2px; }
+.prop-caretaker { font-size: 12px; color: #8b949e; margin-bottom: 14px; }
+.prop-score-row { display: flex; align-items: flex-end; gap: 10px; margin-bottom: 14px; }
+.prop-score { font-size: 36px; font-weight: 700; line-height: 1; }
+.prop-score.good { color: #3fb950; }
+.prop-score.warn { color: #f0a500; }
+.prop-score.bad { color: #f85149; }
+.prop-score-detail { font-size: 11px; color: #8b949e; padding-bottom: 4px; line-height: 1.5; }
+.prop-response { font-size: 11px; margin-bottom: 10px; }
+.prop-trend { display: flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 600; margin-bottom: 12px; }
+.trend-up { color: #3fb950; }
+.trend-down { color: #f85149; }
+.trend-flat { color: #8b949e; }
+.prop-issues { display: flex; flex-wrap: wrap; gap: 5px; }
+.prop-tag { font-size: 11px; padding: 3px 7px; border-radius: 4px; }
+.prop-tag.critical { background: #f8514920; color: #f85149; }
+.prop-tag.warn { background: #f0a50020; color: #f0a500; }
+.prop-tag.ok { background: #3fb95020; color: #3fb950; }
+.prop-tag.muted { background: #30363d20; color: #6e7681; }
+
+.pattern-card { background: #161b22; border: 1px solid #f85149; border-radius: 10px; margin-bottom: 16px; overflow: hidden; }
+.pattern-header { background: #f8514910; padding: 14px 16px; display: flex; align-items: center; gap: 12px; }
+.pattern-icon { font-size: 22px; }
+.pattern-title { font-size: 14px; font-weight: 700; color: #f85149; }
+.pattern-sub { font-size: 12px; color: #8b949e; margin-top: 2px; }
+.pattern-body { padding: 14px 16px; }
+.pattern-insight { font-size: 13px; color: #c9d1d9; line-height: 1.6; margin-bottom: 12px; }
+.pattern-comparison { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+.comp-box { background: #0d1117; border: 1px solid #30363d; border-radius: 6px; padding: 10px 12px; }
+.comp-prop { font-size: 12px; font-weight: 600; color: #e6edf3; margin-bottom: 4px; }
+.comp-detail { font-size: 11px; color: #8b949e; line-height: 1.5; }
+.comp-quote { font-style: italic; margin-bottom: 4px; }
+
+.why-box { background: #161b22; border: 1px solid #30363d; border-radius: 10px; padding: 16px; margin-top: 16px; }
+.why-title { font-size: 13px; font-weight: 600; color: #f0a500; margin-bottom: 8px; }
+.why-text { font-size: 13px; color: #8b949e; line-height: 1.7; }
+
+.excl-section { margin-bottom: 20px; }
+.excl-section-title { font-size: 13px; font-weight: 600; margin-bottom: 4px; display: flex; align-items: center; gap: 8px; }
+.excl-route { font-size: 11px; padding: 2px 8px; border-radius: 4px; font-weight: 600; }
+.route-business { background: #388bfd20; color: #388bfd; }
+.route-listing { background: #d2a8ff20; color: #d2a8ff; }
+.route-facilities { background: #3fb95020; color: #3fb950; }
+.route-policy { background: #f0a50020; color: #f0a500; }
+.excl-reason { font-size: 12px; color: #8b949e; margin-bottom: 10px; }
+.excl-item { background: #161b22; border: 1px solid #30363d; border-radius: 6px; padding: 10px 12px; margin-bottom: 6px; font-size: 12px; color: #8b949e; font-style: italic; line-height: 1.4; }
+.excl-item strong { font-style: normal; color: #484f58; }
+
+.caretaker-view-intro { background: #1c2128; border: 1px solid #30363d; border-radius: 8px; padding: 14px 16px; margin-bottom: 20px; font-size: 13px; color: #8b949e; line-height: 1.6; }
+.caretaker-view-intro strong { color: #e6edf3; }
+.coaching-card { background: #161b22; border: 1px solid #30363d; border-radius: 10px; padding: 16px; margin-bottom: 12px; }
+.coaching-card.benchmark { border-color: #3fb95040; }
+.coaching-name { font-size: 14px; font-weight: 600; margin-bottom: 2px; display: flex; align-items: center; gap: 8px; }
+.benchmark-pill { font-size: 10px; background: #3fb95020; color: #3fb950; border: 1px solid #3fb95040; padding: 2px 8px; border-radius: 10px; font-weight: 600; }
+.coaching-props { font-size: 12px; color: #8b949e; margin-bottom: 14px; }
+.coaching-items { display: flex; flex-direction: column; gap: 8px; }
+.coaching-item { background: #0d1117; border-radius: 6px; padding: 10px 12px; display: flex; gap: 10px; align-items: flex-start; }
+.coaching-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: 4px; }
+.dot-red { background: #f85149; }
+.dot-yellow { background: #f0a500; }
+.dot-green { background: #3fb950; }
+.coaching-text { font-size: 13px; color: #c9d1d9; line-height: 1.5; }
+.coaching-count { font-size: 11px; color: #8b949e; margin-top: 3px; }
+.not-shown-box { background: #161b22; border: 1px dashed #30363d; border-radius: 8px; padding: 12px 14px; margin-top: 10px; font-size: 12px; color: #484f58; }
+.not-shown-box strong { color: #6e7681; }
+
+.biz-card { background: #161b22; border: 1px solid #30363d; border-radius: 10px; padding: 16px; margin-bottom: 12px; }
+.biz-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.biz-prop-name { font-size: 14px; font-weight: 600; min-width: 180px; }
+.biz-prop-loc { font-size: 11px; color: #484f58; font-weight: 400; }
+.biz-score-bar { flex: 1; height: 6px; background: #30363d; border-radius: 3px; min-width: 100px; position: relative; }
+.biz-score-fill { height: 100%; border-radius: 3px; }
+.fill-good { background: #3fb950; }
+.fill-warn { background: #f0a500; }
+.fill-bad { background: #f85149; }
+.biz-score-num { font-size: 14px; font-weight: 700; min-width: 40px; }
+.biz-reviews { font-size: 12px; color: #8b949e; min-width: 70px; }
+.biz-flags { display: flex; gap: 4px; flex-wrap: wrap; }
+.biz-flag { font-size: 10px; padding: 2px 6px; border-radius: 3px; }
+.flag-listing { background: #d2a8ff20; color: #d2a8ff; }
+.flag-ops { background: #f8514920; color: #f85149; }
+.flag-infra { background: #388bfd20; color: #388bfd; }
+.flag-vendor { background: #f0a50020; color: #f0a500; }
+.flag-caretaker { background: #ffa65720; color: #ffa657; }
+.flag-policy { background: #79c0ff20; color: #79c0ff; }
+.flag-clean { background: #3fb95020; color: #3fb950; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">Spacez <span class="accent">ReviewsAI</span></div>
+  <div class="header-right">
+    <span>46 reviews · 7 properties · 6 caretakers · last sync 06:00 AM</span>
+    <span class="stakeholder-pill">⚙ OPERATIONS</span>
+  </div>
+</div>
+
+<div class="stats-strip">
+  <div class="stat-item">
+    <div class="stat-num">46</div>
+    <div class="stat-label">Reviews ingested</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-num">7</div>
+    <div class="stat-label">Properties</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-num critical-num">4</div>
+    <div class="stat-label">Recurring issues flagged</div>
+    <div class="stat-note">≥3 mentions = recurring</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-num warn-num">1</div>
+    <div class="stat-label">Cross-property caretaker pattern</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-num muted-num">8</div>
+    <div class="stat-label">Items excluded (non-ops)</div>
+    <div class="stat-note">routed to Listing / Policy / Env.</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-num" style="font-size:13px; font-weight:600; color:#f0a500; padding-top:4px;">Booking /10 → /5</div>
+    <div class="stat-label">Ratings normalised before scoring</div>
+    <div class="stat-note">not blind-averaged across platforms</div>
+  </div>
+</div>
+
+<div class="layout">
+  <div class="sidebar">
+    <div class="nav-section">Operations</div>
+    <button class="nav-btn active" onclick="showView('queue', this)">🚨 Issue Queue <span class="nav-count">6</span></button>
+    <button class="nav-btn" onclick="showView('properties', this)">🏡 Properties</button>
+    <button class="nav-btn" onclick="showView('caretaker-pattern', this)">⚠️ Caretaker Patterns <span class="nav-count">1</span></button>
+    <button class="nav-btn" onclick="showView('excluded', this)">🚫 Excluded Items <span class="nav-count muted">8</span></button>
+
+    <div class="nav-section">Other Stakeholders</div>
+    <button class="nav-btn" onclick="showView('caretaker-view', this)">👤 Caretaker Digest</button>
+    <button class="nav-btn" onclick="showView('business-view', this)">📊 Business View</button>
+  </div>
+
+  <div class="content">
+
+    <!-- ── ISSUE QUEUE ── -->
+    <div id="view-queue" class="view active">
+      <div class="view-title">Priority Issue Queue</div>
+      <div class="view-subtitle">Sorted by severity × recurrence. Recurring = 3+ distinct review mentions. Click any card to see evidence.</div>
+
+      <div class="data-notice">
+        <strong>Data note:</strong> Booking.com ratings are /10; Airbnb and Google are /5. All scores here are normalised to /5 before comparison or averaging. A Booking.com 6/10 = 3.0/5. Raw platform scores shown in evidence panels.
+      </div>
+
+      <div class="section-divider">RECURRING — ACTION REQUIRED</div>
+
+      <!-- Card 1: Heating -->
+      <div class="issue-card sev-critical" id="card-1">
+        <div class="issue-top" onclick="toggleCard(1)">
+          <div class="issue-row1">
+            <span class="sev-badge critical">Recurring · Critical</span>
+            <div class="issue-title">Heating system failure — Cliffside Retreat</div>
+            <div class="issue-count">4 mentions</div>
+          </div>
+          <div class="issue-row2">
+            <span class="issue-meta-item">🔧 Maintenance</span>
+            <span class="issue-meta-item">🏡 Cliffside Retreat, Kasauli HP</span>
+            <span class="issue-meta-item">👤 Deepak Sharma (not at fault)</span>
+            <span class="issue-meta-item">📅 Dec 2025 – Feb 2026</span>
+            <span class="issue-meta-item" style="color:#f85149;">Attribution: Property infrastructure</span>
+          </div>
+        </div>
+        <div class="action-box show">
+          <div class="action-label">▶ RECOMMENDED ACTION</div>
+          <div class="action-text">Engage HVAC contractor. Test heating in all rooms before next check-in. Add pre-arrival heating check to property handover checklist. Deepak Sharma is empathetic and provided blankets — not the cause; do not send to caretaker coaching.</div>
+        </div>
+        <div class="evidence-panel" id="evidence-1">
+          <div class="evidence-header">Guest evidence (4 reviews)</div>
+          <div class="review-quote">
+            <div class="review-text">"The heating didn't work properly and Kasauli in December is freezing. We were cold all night despite raising it with the caretaker twice."</div>
+            <div class="review-meta">
+              <span class="platform-chip chip-airbnb">Airbnb</span>
+              <span class="rating-raw">2/5 raw</span>
+              <span class="norm-arrow">→</span>
+              <span class="rating-norm">2.0/5 normalised</span>
+              <span>· RV025 · Dec 2025</span>
+            </div>
+          </div>
+          <div class="review-quote">
+            <div class="review-text">"Room heater broken, very cold. Otherwise nice views."</div>
+            <div class="review-meta">
+              <span class="platform-chip chip-google">Google</span>
+              <span class="rating-raw">2/5 raw</span>
+              <span class="norm-arrow">→</span>
+              <span class="rating-norm">2.0/5 normalised</span>
+              <span>· RV026 · Jan 2026</span>
+            </div>
+          </div>
+          <div class="review-quote">
+            <div class="review-text">"Good views but the heating in two rooms was inadequate. Caretaker Deepak was helpful and lent us extra blankets."</div>
+            <div class="review-meta">
+              <span class="platform-chip chip-booking">Booking.com</span>
+              <span class="rating-raw">6.5/10 raw</span>
+              <span class="norm-arrow">→</span>
+              <span class="rating-norm">3.25/5 normalised</span>
+              <span>· RV027 · Jan 2026</span>
+            </div>
+          </div>
+          <div class="review-quote">
+            <div class="review-text">"Gorgeous sunsets from the deck. Deepak made excellent chai every morning. Heating could be better."</div>
+            <div class="review-meta">
+              <span class="platform-chip chip-airbnb">Airbnb</span>
+              <span class="rating-raw">4/5 raw</span>
+              <span class="norm-arrow">→</span>
+              <span class="rating-norm">4.0/5 normalised</span>
+              <span>· RV028 · Feb 2026</span>
+              <span class="flag-note">⚠ Issue appears in 4/5 review — missed if filtering only low scores</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 2: Pool -->
+      <div class="issue-card sev-critical" id="card-2">
+        <div class="issue-top" onclick="toggleCard(2)">
+          <div class="issue-row1">
+            <span class="sev-badge critical">Recurring · Critical</span>
+            <div class="issue-title">Pool maintenance — Serenity Villa</div>
+            <div class="issue-count">4 mentions</div>
+          </div>
+          <div class="issue-row2">
+            <span class="issue-meta-item">🔧 Maintenance</span>
+            <span class="issue-meta-item">🏡 Serenity Villa, Assagao Goa</span>
+            <span class="issue-meta-item">👤 Suresh Naik (not at fault)</span>
+            <span class="issue-meta-item">📅 Jan – May 2026</span>
+            <span class="issue-meta-item" style="color:#f85149;">Attribution: Property infrastructure</span>
+          </div>
+        </div>
+        <div class="action-box show">
+          <div class="action-label">▶ RECOMMENDED ACTION</div>
+          <div class="action-text">Verify pool service contractor is on a regular schedule. One guest (RV036, Apr 2026) reported pool was clean — possible partial resolution — but RV043 (May 2026) still flags it as a recurring gripe. Close only after 3+ consecutive bookings with zero pool mentions.</div>
+        </div>
+        <div class="evidence-panel" id="evidence-2">
+          <div class="evidence-header">Guest evidence (4 negative + 1 resolution signal)</div>
+          <div class="review-quote">
+            <div class="review-text">"Beautiful villa and Suresh was incredibly helpful. Only issue was the pool looked green and wasn't cleaned during our 3-night stay."</div>
+            <div class="review-meta">
+              <span class="platform-chip chip-airbnb">Airbnb</span>
+              <span class="rating-raw">4/5 raw</span>
+              <span class="norm-arrow">→</span>
+              <span class="rating-norm">4.0/5 normalised</span>
+              <span>· RV001 · Jan 2026</span>
+              <span class="flag-note">⚠ 4/5 — would miss if filtering by low scores</span>
+            </div>
+          </div>
+          <div class="review-quote">
+            <div class="review-text">"Lovely property but the swimming pool was not maintained — murky water the whole time. Caretaker was polite and responsive though."</div>
+            <div class="review-meta">
+              <span class="platform-chip chip-booking">Booking.com</span>
+              <span class="rating-raw">6/10 raw</span>
+              <span class="norm-arrow">→</span>
+              <span class="rating-norm">3.0/5 normalised</span>
+              <span>· RV002 · Feb 2026</span>
+            </div>
+          </div>
+          <div class="review-quote">
+            <div class="review-text">"Pool was dirty and clearly hadn't been cleaned in days. Disappointing for the price. The caretaker himself was nice and tried to help."</div>
+            <div class="review-meta">
+              <span class="platform-chip chip-google">Google</span>
+              <span class="rating-raw">3/5 raw</span>
+              <span class="norm-arrow">→</span>
+              <span class="rating-norm">3.0/5 normalised</span>
+              <span>· RV003 · Feb 2026</span>
+            </div>
+          </div>
+          <div class="review-quote">
+            <div class="review-text">"Great villa, Suresh excellent. Pool maintenance is the only recurring gripe I'd flag."</div>
+            <div class="review-meta">
+              <span class="platform-chip chip-booking">Booking.com</span>
+              <span class="rating-raw">8/10 raw</span>
+              <span class="norm-arrow">→</span>
+              <span class="rating-norm">4.0/5 normalised</span>
+              <span>· RV043 · May 2026</span>
+              <span class="flag-note">⚠ Still mentioned in May despite Apr resolution signal</span>
+            </div>
+          </div>
+          <div class="review-quote positive">
+            <div class="review-text">"Second time staying here and Suresh remembers us every visit. Pool was clean this time — looks like they sorted it out." <em style="color:#3fb950;">[Resolution signal — monitor]</em></div>
+            <div class="review-meta">
+              <span class="platform-chip chip-airbnb">Airbnb</span>
+              <span class="rating-raw">5/5 raw</span>
+              <span class="norm-arrow">→</span>
+              <span class="rating-norm">5.0/5 normalised</span>
+              <span>· RV036 · Apr 2026</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 3: Cleanliness -->
+      <div class="issue-card sev-high" id="card-3">
+        <div class="issue-top" onclick="toggleCard(3)">
+          <div class="issue-row1">
+            <span class="sev-badge high">Recurring · High</span>
+            <div class="issue-title">Pre-arrival cleanliness — Vineyard Villa</div>
+            <div class="issue-count">4 mentions</div>
+          </div>
+          <div class="issue-row2">
+            <span class="issue-meta-item">🧹 Housekeeping</span>
+            <span class="issue-meta-item">🏡 Vineyard Villa, Nashik Maharashtra</span>
+            <span class="issue-meta-item">👤 Ganesh More (not directly at fault)</span>
+            <span class="issue-meta-item">📅 Jan – Apr 2026</span>
+            <span class="issue-meta-item" style="color:#f0a500;">Attribution: Third-party housekeeping vendor</span>
+          </div>
+        </div>
+        <div class="action-box show">
+          <div class="action-label">▶ RECOMMENDED ACTION</div>
+          <div class="action-text">Audit third-party housekeeping vendor. Require mandatory pre-arrival walkthrough by Ganesh More with a checklist (kitchen, bathrooms, bedsheets). RV037 is a repeat guest — second incident means reputational damage is compounding. If issue recurs after 2 more bookings, switch vendor. Do NOT attribute to caretaker; do include pre-arrival walkthrough gap in coaching digest.</div>
+        </div>
+        <div class="evidence-panel" id="evidence-3">
+          <div class="evidence-header">Guest evidence (4 reviews)</div>
+          <div class="review-quote">
+            <div class="review-text">"Worst experience. The villa was not cleaned before we arrived — dirty dishes in the sink and hair in the beds. Ganesh blamed the housekeeping vendor."</div>
+            <div class="review-meta">
+              <span class="platform-chip chip-airbnb">Airbnb</span>
+              <span class="rating-raw">1/5 raw</span>
+              <span class="norm-arrow">→</span>
+              <span class="rating-norm">1.0/5 normalised</span>
+              <span>· RV030 · Jan 2026</span>
+              <span class="flag-note">⚠ Guest explicitly names vendor — attribution confirmed</span>
+            </div>
+          </div>
+          <div class="review-quote">
+            <div class="review-text">"Arrived to an unclean property. Bedsheets were not changed. Very poor."</div>
+            <div class="review-meta">
+              <span class="platform-chip chip-booking">Booking.com</span>
+              <span class="rating-raw">4/10 raw</span>
+              <span class="norm-arrow">→</span>
+              <span class="rating-norm">2.0/5 normalised</span>
+              <span>· RV031 · Feb 2026</span>
+            </div>
+          </div>
+          <div class="review-quote">
+            <div class="review-text">"Cleanliness was a serious issue on arrival. The vineyard itself is beautiful though."</div>
+            <div class="review-meta">
+              <span class="platform-chip chip-google">Google</span>
+              <span class="rating-raw">2/5 raw</span>
+              <span class="norm-arrow">→</span>
+              <span class="rating-norm">2.0/5 normalised</span>
+              <span>· RV032 · Feb 2026</span>
+            </div>
+          </div>
+          <div class="review-quote">
+            <div class="review-text">"Cleanliness needs serious attention. Second time I've faced this at a Spacez villa."</div>
+            <div class="review-meta">
+              <span class="platform-chip chip-booking">Booking.com</span>
+              <span class="rating-raw">3/10 raw</span>
+              <span class="norm-arrow">→</span>
+              <span class="rating-norm">1.5/5 normalised</span>
+              <span>· RV037 · Apr 2026</span>
+              <span class="flag-note">⚠ Repeat guest — second incident, pattern now visible to guests</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 4: WiFi -->
+      <div class="issue-card sev-high" id="card-4">
+        <div class="issue-top" onclick="toggleCard(4)">
+          <div class="issue-row1">
+            <span class="sev-badge high">Recurring · High</span>
+            <div class="issue-title">WiFi failure — Hilltop Haven</div>
+            <div class="issue-count">3 mentions</div>
+          </div>
+          <div class="issue-row2">
+            <span class="issue-meta-item">🔧 Maintenance</span>
+            <span class="issue-meta-item">🏡 Hilltop Haven, Lonavala Maharashtra</span>
+            <span class="issue-meta-item">📅 Jan – May 2026</span>
+            <span class="issue-meta-item" style="color:#f85149;">Attribution: Property infrastructure / ISP</span>
+          </div>
+        </div>
+        <div class="action-box show">
+          <div class="action-label">▶ RECOMMENDED ACTION</div>
+          <div class="action-text">Run speed test at property. Consider mesh WiFi or backup 4G router. Urgency elevated: RV042 (May 2026) explicitly references prior reviews — guests are reading the issue before booking, compounding reputational damage. Resolve before peak season.</div>
+        </div>
+        <div class="evidence-panel" id="evidence-4">
+          <div class="evidence-header">Guest evidence (3 reviews)</div>
+          <div class="review-quote">
+            <div class="review-text">"WiFi did not work the entire weekend and we were there to work remotely. Raised it multiple times, no fix."</div>
+            <div class="review-meta">
+              <span class="platform-chip chip-google">Google</span>
+              <span class="rating-raw">2/5 raw</span>
+              <span class="norm-arrow">→</span>
+              <span class="rating-norm">2.0/5 normalised</span>
+              <span>· RV007 · Jan 2026</span>
+            </div>
+          </div>
+          <div class="review-quote">
+            <div class="review-text">"Decent place for a group. WiFi was patchy. Caretaker Mahesh helped with everything else."</div>
+            <div class="review-meta">
+              <span class="platform-chip chip-booking">Booking.com</span>
+              <span class="rating-raw">7.5/10 raw</span>
+              <span class="norm-arrow">→</span>
+              <span class="rating-norm">3.75/5 normalised</span>
+              <span>· RV008 · Feb 2026</span>
+            </div>
+          </div>
+          <div class="review-quote">
+            <div class="review-text">"Do not book. Misleading photos and no WiFi. Exactly the issues other reviews mentioned."</div>
+            <div class="review-meta">
+              <span class="platform-chip chip-airbnb">Airbnb</span>
+              <span class="rating-raw">1/5 raw</span>
+              <span class="norm-arrow">→</span>
+              <span class="rating-norm">1.0/5 normalised</span>
+              <span>· RV042 · May 2026</span>
+              <span class="flag-note">⚠ Guest cites prior reviews — reputational damage is now self-reinforcing</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-divider">WATCH-LIST — BELOW RECURRING THRESHOLD (2 mentions)</div>
+
+      <!-- Card 5: Hot water -->
+      <div class="issue-card sev-watch" id="card-5">
+        <div class="issue-top" onclick="toggleCard(5)">
+          <div class="issue-row1">
+            <span class="sev-badge watch">Watch · 1 more = Recurring</span>
+            <div class="issue-title">Hot water / geyser fault — Misty Estate</div>
+            <div class="issue-count">2 mentions</div>
+          </div>
+          <div class="issue-row2">
+            <span class="issue-meta-item">🔧 Maintenance</span>
+            <span class="issue-meta-item">🏡 Misty Estate, Chikmagalur Karnataka</span>
+            <span class="issue-meta-item">📅 Feb – Apr 2026</span>
+            <span class="issue-meta-item" style="color:#8b949e;">Attribution: Property infrastructure</span>
+          </div>
+        </div>
+        <div class="action-box show">
+          <div class="action-label">▶ RECOMMENDED ACTION</div>
+          <div class="action-text">Inspect and service geysers in both bathrooms. One more guest mention triggers recurring flag. Low cost to fix proactively.</div>
+        </div>
+        <div class="evidence-panel" id="evidence-5">
+          <div class="evidence-header">Guest evidence (2 reviews)</div>
+          <div class="review-quote">
+            <div class="review-text">"Beautiful location. Hot water in the second bathroom didn't work."</div>
+            <div class="review-meta">
+              <span class="platform-chip chip-google">Google</span>
+              <span class="rating-raw">4/5 raw</span>
+              <span class="norm-arrow">→</span>
+              <span class="rating-norm">4.0/5 normalised</span>
+              <span>· RV013 · Feb 2026</span>
+            </div>
+          </div>
+          <div class="review-quote">
+            <div class="review-text">"Great estate stay. Geyser in one bathroom was faulty."</div>
+            <div class="review-meta">
+              <span class="platform-chip chip-booking">Booking.com</span>
+              <span class="rating-raw">8/10 raw</span>
+              <span class="norm-arrow">→</span>
+              <span class="rating-norm">4.0/5 normalised</span>
+              <span>· RV015 · Apr 2026</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 6: Hilltop listing accuracy -->
+      <div class="issue-card sev-watch" id="card-6">
+        <div class="issue-top" onclick="toggleCard(6)">
+          <div class="issue-row1">
+            <span class="sev-badge watch">Watch · Route to Listing</span>
+            <div class="issue-title">Misleading listing photos — Hilltop Haven</div>
+            <div class="issue-count">2 mentions</div>
+          </div>
+          <div class="issue-row2">
+            <span class="issue-meta-item">📋 Listing accuracy</span>
+            <span class="issue-meta-item">🏡 Hilltop Haven, Lonavala Maharashtra</span>
+            <span class="issue-meta-item">📅 Dec 2025 – May 2026</span>
+            <span class="issue-meta-item" style="color:#d2a8ff;">Attribution: Listing-level — route to listing team</span>
+          </div>
+        </div>
+        <div class="action-box show">
+          <div class="action-label">▶ RECOMMENDED ACTION</div>
+          <div class="action-text">Route to listing team: update photos to reflect current view (valley view is blocked by adjacent construction). Not fixable by ops — but note that RV042 combines this with WiFi complaint in a single 1/5 review, amplifying the reputational hit.</div>
+        </div>
+        <div class="evidence-panel" id="evidence-6">
+          <div class="evidence-header">Guest evidence (2 reviews)</div>
+          <div class="review-quote">
+            <div class="review-text">"Listing photos show a clear valley view but ours was blocked by an under-construction building next door. Felt misled. Mahesh was apologetic but couldn't do anything."</div>
+            <div class="review-meta">
+              <span class="platform-chip chip-airbnb">Airbnb</span>
+              <span class="rating-raw">2/5 raw</span>
+              <span class="norm-arrow">→</span>
+              <span class="rating-norm">2.0/5 normalised</span>
+              <span>· RV006 · Dec 2025</span>
+            </div>
+          </div>
+          <div class="review-quote">
+            <div class="review-text">"Do not book. Misleading photos and no WiFi. Exactly the issues other reviews mentioned."</div>
+            <div class="review-meta">
+              <span class="platform-chip chip-airbnb">Airbnb</span>
+              <span class="rating-raw">1/5 raw</span>
+              <span class="norm-arrow">→</span>
+              <span class="rating-norm">1.0/5 normalised</span>
+              <span>· RV042 · May 2026</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── PROPERTIES ── -->
+    <div id="view-properties" class="view">
+      <div class="view-title">Property Health</div>
+      <div class="view-subtitle">Normalised scores across all platforms. Booking.com /10 ÷ 2 before averaging. Host response rate shown per property.</div>
+      <div class="property-grid">
+
+        <div class="prop-card">
+          <div class="prop-name">Backwater Bungalow</div>
+          <div class="prop-location">Alleppey, Kerala</div>
+          <div class="prop-caretaker">Caretaker: Biju Thomas · 7 reviews</div>
+          <div class="prop-score-row">
+            <div class="prop-score good">4.32</div>
+            <div class="prop-score-detail">/ 5.0 normalised<br>Airbnb · Booking · Google</div>
+          </div>
+          <div class="prop-response" style="color:#3fb950;">Host responded: 6/7 (86%)</div>
+          <div class="prop-trend trend-up">↑ Strong</div>
+          <div class="prop-issues">
+            <span class="prop-tag ok">No recurring ops issues</span>
+            <span class="prop-tag muted">Environmental: mosquitoes, damp</span>
+          </div>
+        </div>
+
+        <div class="prop-card">
+          <div class="prop-name">Serenity Villa</div>
+          <div class="prop-location">Assagao, Goa</div>
+          <div class="prop-caretaker">Caretaker: Suresh Naik · 7 reviews</div>
+          <div class="prop-score-row">
+            <div class="prop-score good">4.09</div>
+            <div class="prop-score-detail">/ 5.0 normalised<br>Airbnb · Booking · Google</div>
+          </div>
+          <div class="prop-response" style="color:#3fb950;">Host responded: 5/7 (71%)</div>
+          <div class="prop-trend trend-flat">→ Stable (pool issue may be resolving)</div>
+          <div class="prop-issues">
+            <span class="prop-tag warn">Pool maintenance (recurring — monitor)</span>
+          </div>
+        </div>
+
+        <div class="prop-card">
+          <div class="prop-name">Coorg Canopy</div>
+          <div class="prop-location">Madikeri, Coorg, Karnataka</div>
+          <div class="prop-caretaker">Caretaker: Lokesh Gowda · 5 reviews</div>
+          <div class="prop-score-row">
+            <div class="prop-score warn">3.55</div>
+            <div class="prop-score-detail">/ 5.0 normalised<br>Airbnb · Booking · Google</div>
+          </div>
+          <div class="prop-response" style="color:#f0a500;">Host responded: 2/5 (40%)</div>
+          <div class="prop-trend trend-flat">→ Stable</div>
+          <div class="prop-issues">
+            <span class="prop-tag warn">Check-in delays (caretaker pattern)</span>
+            <span class="prop-tag muted">Road access (listing note needed)</span>
+          </div>
+        </div>
+
+        <div class="prop-card">
+          <div class="prop-name">Cliffside Retreat</div>
+          <div class="prop-location">Kasauli, Himachal Pradesh</div>
+          <div class="prop-caretaker">Caretaker: Deepak Sharma · 6 reviews</div>
+          <div class="prop-score-row">
+            <div class="prop-score warn">3.54</div>
+            <div class="prop-score-detail">/ 5.0 normalised<br>Airbnb · Booking · Google</div>
+          </div>
+          <div class="prop-response" style="color:#f0a500;">Host responded: 2/6 (33%)</div>
+          <div class="prop-trend trend-down">↓ Declining (heating unresolved)</div>
+          <div class="prop-issues">
+            <span class="prop-tag critical">Heating failure (recurring · urgent)</span>
+          </div>
+        </div>
+
+        <div class="prop-card">
+          <div class="prop-name">Misty Estate</div>
+          <div class="prop-location">Chikmagalur, Karnataka</div>
+          <div class="prop-caretaker">Caretaker: Lokesh Gowda · 7 reviews</div>
+          <div class="prop-score-row">
+            <div class="prop-score warn">3.36</div>
+            <div class="prop-score-detail">/ 5.0 normalised<br>Airbnb · Booking · Google</div>
+          </div>
+          <div class="prop-response" style="color:#f85149;">Host responded: 1/7 (14%) ← LOW</div>
+          <div class="prop-trend trend-down">↓ Declining</div>
+          <div class="prop-issues">
+            <span class="prop-tag warn">Check-in delays (caretaker pattern)</span>
+            <span class="prop-tag warn">Hot water fault (watchlist: 2 mentions)</span>
+            <span class="prop-tag muted">Bedroom count oversold (listing)</span>
+          </div>
+        </div>
+
+        <div class="prop-card">
+          <div class="prop-name">Vineyard Villa</div>
+          <div class="prop-location">Nashik, Maharashtra</div>
+          <div class="prop-caretaker">Caretaker: Ganesh More · 7 reviews</div>
+          <div class="prop-score-row">
+            <div class="prop-score bad">2.79</div>
+            <div class="prop-score-detail">/ 5.0 normalised<br>Airbnb · Booking · Google</div>
+          </div>
+          <div class="prop-response" style="color:#f85149;">Host responded: 2/7 (29%) ← LOW</div>
+          <div class="prop-trend trend-down">↓ Declining</div>
+          <div class="prop-issues">
+            <span class="prop-tag critical">Cleanliness — vendor (recurring)</span>
+          </div>
+        </div>
+
+        <div class="prop-card">
+          <div class="prop-name">Hilltop Haven</div>
+          <div class="prop-location">Lonavala, Maharashtra</div>
+          <div class="prop-caretaker">Caretaker: Mahesh Patil · 7 reviews</div>
+          <div class="prop-score-row">
+            <div class="prop-score bad">2.68</div>
+            <div class="prop-score-detail">/ 5.0 normalised<br>Airbnb · Booking · Google</div>
+          </div>
+          <div class="prop-response" style="color:#f85149;">Host responded: 2/7 (29%) ← LOW</div>
+          <div class="prop-trend trend-down">↓ Declining (guests now citing prior reviews)</div>
+          <div class="prop-issues">
+            <span class="prop-tag critical">WiFi failure (recurring)</span>
+            <span class="prop-tag warn">Misleading photos (listing)</span>
+            <span class="prop-tag muted">Occupancy policy (policy team)</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ── CARETAKER PATTERNS ── -->
+    <div id="view-caretaker-pattern" class="view">
+      <div class="view-title">Cross-Property Caretaker Patterns</div>
+      <div class="view-subtitle">Issues that follow a caretaker across properties. Tracking by property alone misses these entirely.</div>
+
+      <div class="pattern-card">
+        <div class="pattern-header">
+          <div class="pattern-icon">⚠️</div>
+          <div>
+            <div class="pattern-title">Lokesh Gowda — Check-in delays (4 mentions across 2 properties)</div>
+            <div class="pattern-sub">Misty Estate (Chikmagalur) · Coorg Canopy (Madikeri) · Severity: High</div>
+          </div>
+        </div>
+        <div class="pattern-body">
+          <div class="pattern-insight">
+            Four separate guests across two different properties reported Lokesh arriving late to check-in — delays of 45 minutes to 90+ minutes. A property-level view generates two unrelated problems: "Misty Estate has check-in issues" and "Coorg Canopy has check-in issues." The correct read is <strong>one caretaker with a consistent punctuality gap</strong>. One guest explicitly called it "a pattern" (RV044). Note also that Lokesh manages two geographically separate properties — Chikmagalur and Madikeri Coorg — which may be contributing to the delays.
+          </div>
+          <div class="pattern-comparison">
+            <div class="comp-box">
+              <div class="comp-prop">🏡 Misty Estate — 2 delay mentions</div>
+              <div class="comp-detail">
+                <div class="comp-quote">"Caretaker arrived 90 minutes late and we waited outside in the rain." (RV011, 3/5)</div>
+                <div class="comp-quote">"Late check-in again. Seems to be a pattern with this caretaker." (RV044, 2/5)</div>
+              </div>
+            </div>
+            <div class="comp-box">
+              <div class="comp-prop">🏡 Coorg Canopy — 2 delay mentions</div>
+              <div class="comp-detail">
+                <div class="comp-quote">"Check-in delayed by over an hour and the caretaker was unreachable on phone." (RV016, 2/5)</div>
+                <div class="comp-quote">"Setup took a while on arrival." (RV017, 4/5 — mild mention)</div>
+              </div>
+            </div>
+          </div>
+          <div style="background:#0d1117; border:1px solid #f85149; border-radius:6px; padding:12px 14px; font-size:13px; color:#f85149; margin-bottom:12px;">
+            <strong>Action:</strong> <span style="color:#c9d1d9;">Route to Operations manager for a coaching conversation — not a maintenance ticket. Review whether Lokesh's coverage area (two geographically separate properties) is feasible for on-time check-ins. If delays continue after coaching, consider restructuring coverage.</span>
+          </div>
+          <div style="background:#0d1117; border:1px solid #3fb95040; border-radius:6px; padding:12px 14px; font-size:13px; color:#8b949e;">
+            <span style="color:#3fb950; font-weight:600;">Also note (positive signal):</span> Once present, Lokesh is consistently described positively. RV040 (Coorg Canopy, 9/10): "Caretaker was attentive once he arrived." RV014 (Misty Estate): "Magical place, woke up to mist over the hills. Loved it." The punctuality gap is the specific intervention point — not overall dismissal.
+          </div>
+        </div>
+      </div>
+
+      <div class="why-box">
+        <div class="why-title">Why this view exists — the attribution problem</div>
+        <div class="why-text">
+          If you track reviews by property, a caretaker who covers two venues with a consistent weakness will appear as two independent property-level problems. You'd dispatch two separate investigations and find nothing structural to fix — because the issue is a person, not a place. This view re-attributes review signals to the responsible individual before routing. The rule: if the same guest complaint follows the same caretaker across different properties, it's a people issue. Route to Operations manager for coaching, not the property ops queue.
+        </div>
+      </div>
+    </div>
+
+    <!-- ── EXCLUDED ── -->
+    <div id="view-excluded" class="view">
+      <div class="view-title">Excluded from Operations Queue</div>
+      <div class="view-subtitle">These signals are real but not actionable by Operations. Each is routed to the appropriate owner.</div>
+
+      <div class="excl-section">
+        <div class="excl-section-title">Listing accuracy — photos / description <span class="excl-route route-listing">→ Listing team</span></div>
+        <div class="excl-reason">Guests feeling misled by photos or room descriptions is a listing problem. Operations cannot update photos or rewrite listings.</div>
+        <div class="excl-item">"Listing photos show a clear valley view but ours was blocked by an under-construction building." <strong>(RV006 · Hilltop Haven · Airbnb 2/5)</strong></div>
+        <div class="excl-item">"The listing said 4 bedrooms and one was basically a store room with a mattress. Slightly oversold." <strong>(RV039 · Misty Estate · Airbnb 3/5)</strong></div>
+      </div>
+
+      <div class="excl-section">
+        <div class="excl-section-title">Access / Infrastructure — external <span class="excl-route route-facilities">→ Facilities / Landlord</span></div>
+        <div class="excl-reason">Road and access conditions are not Spacez-controlled. Can be noted in the listing description but not raised as a maintenance ticket.</div>
+        <div class="excl-item">"Nice villa but the road leading up is in terrible condition — our sedan scraped the bottom. Should be mentioned in the listing." <strong>(RV019 · Coorg Canopy · Airbnb 3/5)</strong></div>
+      </div>
+
+      <div class="excl-section">
+        <div class="excl-section-title">Policy complaint <span class="excl-route route-policy">→ Business / Policy team</span></div>
+        <div class="excl-reason">Caretaker enforced occupancy policy correctly. Guest objecting to the policy is a Business-level communication problem, not a hospitality failure.</div>
+        <div class="excl-item">"Booked for a group but they turned away our extra guests at the gate citing occupancy policy. Felt blindsided — this wasn't clear at booking." <strong>(RV035 · Hilltop Haven · Google 1/5 · 12 guests booked)</strong></div>
+      </div>
+
+      <div class="excl-section">
+        <div class="excl-section-title">Location / environmental — not Spacez-actionable <span class="excl-route" style="background:#30363d20; color:#8b949e;">No route</span></div>
+        <div class="excl-reason">Mosquitoes, humidity, and restaurant availability near a backwater property are environmental facts, not operations failures.</div>
+        <div class="excl-item">"Wonderful location and host. Mosquitoes were a problem in the evening — bring repellent." <strong>(RV023 · Backwater Bungalow · Airbnb 4/5)</strong></div>
+        <div class="excl-item">"Great host. The place smelled a bit damp, probably the humidity by the water." <strong>(RV024 · Backwater Bungalow · Booking 7/10 → 3.5/5)</strong></div>
+        <div class="excl-item">"Biju is fantastic. Wish there were more restaurants nearby but that's the location, not the villa." <strong>(RV045 · Backwater Bungalow · Airbnb 4/5)</strong></div>
+      </div>
+
+      <div class="excl-section">
+        <div class="excl-section-title">No extractable signal — noise <span class="excl-route" style="background:#30363d20; color:#8b949e;">Sentiment score only</span></div>
+        <div class="excl-reason">Ultra-short reviews contain no actionable content. They contribute to the normalised score but cannot be tagged with issues or themes.</div>
+        <div class="excl-item">"Amazing." <strong>(RV041 · Cliffside Retreat · Google 5/5)</strong></div>
+      </div>
+    </div>
+
+    <!-- ── CARETAKER DIGEST ── -->
+    <div id="view-caretaker-view" class="view">
+      <div class="view-title">Caretaker Coaching Digest</div>
+      <div class="view-subtitle">What caretakers receive — filtered to controllable dimensions only. Paraphrased, not verbatim. No scores.</div>
+
+      <div class="caretaker-view-intro">
+        <strong>Design rationale:</strong> Sending caretakers full review reports creates three problems: (1) many negatives are not caretaker-controllable (heating, WiFi, road, photos, policy) — attributing these to the caretaker breeds resentment; (2) caretakers with score visibility solicit positive reviews, skewing the signal; (3) guests wrote for a public platform, not for their host to read individually. The digest below shows only signals attributable to the caretaker's behaviour, framed as coaching — not audit. Property infrastructure failures are explicitly excluded from what each caretaker receives.
+      </div>
+
+      <div class="coaching-card benchmark">
+        <div class="coaching-name">Biju Thomas <span class="benchmark-pill">★ BENCHMARK CARETAKER</span></div>
+        <div class="coaching-props">Covering: Backwater Bungalow · Alleppey, Kerala</div>
+        <div class="coaching-items">
+          <div class="coaching-item">
+            <div class="coaching-dot dot-green"></div>
+            <div>
+              <div class="coaching-text">Guests at your property consistently describe going beyond expectations — arranging a houseboat ride, cooking Kerala meals, managing check-in smoothly over WhatsApp. Three independent reviews this period called you the highlight of their trip.</div>
+              <div class="coaching-count">7 reviews · 0 issues flagged · highest caretaker score in portfolio</div>
+            </div>
+          </div>
+        </div>
+        <div class="not-shown-box" style="border-color:#3fb95040;">
+          <strong style="color:#3fb950;">Pilot recommendation:</strong> Launch the coaching digest with Biju first. The first caretaker experience of the system should be affirmative — it sets the tone for how all caretakers receive the product.
+        </div>
+      </div>
+
+      <div class="coaching-card">
+        <div class="coaching-name">Suresh Naik</div>
+        <div class="coaching-props">Covering: Serenity Villa · Assagao, Goa</div>
+        <div class="coaching-items">
+          <div class="coaching-item">
+            <div class="coaching-dot dot-green"></div>
+            <div>
+              <div class="coaching-text">Guests consistently describe you as warm and anticipatory — arranging a cook at short notice, giving local tips, remembering returning guests by name. One repeat guest mentioned you by name positively across two separate stays.</div>
+              <div class="coaching-count">7 reviews · multiple positive hosting mentions</div>
+            </div>
+          </div>
+        </div>
+        <div class="not-shown-box">
+          <strong>Not shown to Suresh:</strong> pool maintenance issues — property infrastructure, outside his control. Sending these would be unfair.
+        </div>
+      </div>
+
+      <div class="coaching-card">
+        <div class="coaching-name">Lokesh Gowda</div>
+        <div class="coaching-props">Covering: Misty Estate (Chikmagalur) · Coorg Canopy (Madikeri) — <span style="color:#f0a500;">two geographically separate properties</span></div>
+        <div class="coaching-items">
+          <div class="coaching-item">
+            <div class="coaching-dot dot-red"></div>
+            <div>
+              <div class="coaching-text">Check-in punctuality: across both your properties, guests mentioned waiting at arrival — in one case over 90 minutes, in another over an hour. One guest described this as a recurring pattern. Being unreachable by phone during delays was noted specifically.</div>
+              <div class="coaching-count">4 mentions across 2 properties · coaching conversation needed</div>
+            </div>
+          </div>
+          <div class="coaching-item">
+            <div class="coaching-dot dot-green"></div>
+            <div>
+              <div class="coaching-text">Once present, guests describe you as attentive and warm. Your hosting quality is clearly there — the punctuality gap is the specific thing to address.</div>
+              <div class="coaching-count">Multiple positive mentions once on-site</div>
+            </div>
+          </div>
+        </div>
+        <div class="not-shown-box">
+          <strong>Not shown to Lokesh:</strong> hot water / geyser faults at Misty Estate — property infrastructure. Also note: a separate cross-property pattern flag has been raised with the Operations manager for a coaching conversation about coverage area feasibility.
+        </div>
+      </div>
+
+      <div class="coaching-card">
+        <div class="coaching-name">Mahesh Patil</div>
+        <div class="coaching-props">Covering: Hilltop Haven · Lonavala, Maharashtra</div>
+        <div class="coaching-items">
+          <div class="coaching-item">
+            <div class="coaching-dot dot-yellow"></div>
+            <div>
+              <div class="coaching-text">When guests raised issues (WiFi, other problems), you were described as helpful in managing the situation. However, several guests left reviews that received no host response — a visible signal to future guests that issues go unacknowledged.</div>
+              <div class="coaching-count">5/7 reviews without host response — low response rate needs attention</div>
+            </div>
+          </div>
+        </div>
+        <div class="not-shown-box">
+          <strong>Not shown to Mahesh:</strong> WiFi failure, misleading photos — infrastructure and listing-level, not his responsibility. Occupancy policy complaint — he enforced policy correctly.
+        </div>
+      </div>
+
+      <div class="coaching-card">
+        <div class="coaching-name">Deepak Sharma</div>
+        <div class="coaching-props">Covering: Cliffside Retreat · Kasauli, Himachal Pradesh</div>
+        <div class="coaching-items">
+          <div class="coaching-item">
+            <div class="coaching-dot dot-green"></div>
+            <div>
+              <div class="coaching-text">Guests described you as empathetic and resourceful under difficult conditions — lending extra blankets when heating failed, making chai in the mornings. You handled the gap well; the infrastructure issue is being escalated to a contractor separately.</div>
+              <div class="coaching-count">Positive hosting mentions despite property-level failures</div>
+            </div>
+          </div>
+        </div>
+        <div class="not-shown-box">
+          <strong>Not shown to Deepak:</strong> heating system failures — property infrastructure, not his fault. A contractor is being engaged.
+        </div>
+      </div>
+
+      <div class="coaching-card">
+        <div class="coaching-name">Ganesh More</div>
+        <div class="coaching-props">Covering: Vineyard Villa · Nashik, Maharashtra</div>
+        <div class="coaching-items">
+          <div class="coaching-item">
+            <div class="coaching-dot dot-yellow"></div>
+            <div>
+              <div class="coaching-text">Pre-arrival walkthrough: guests at Vineyard Villa arrived to find the property uncleaned on multiple occasions. While the root cause is the housekeeping vendor (being reviewed separately), a pre-arrival checklist walkthrough would catch these issues before guests arrive — and before blame needs to be assigned at all.</div>
+              <div class="coaching-count">4 guest mentions · vendor review in progress</div>
+            </div>
+          </div>
+          <div class="coaching-item">
+            <div class="coaching-dot dot-red"></div>
+            <div>
+              <div class="coaching-text">Review responses: 5 of your property's 7 reviews received no host response. Publicly responding to guest feedback — including critical reviews — signals to future guests that issues are taken seriously.</div>
+              <div class="coaching-count">5/7 reviews without response · lowest response rate in portfolio alongside Misty Estate</div>
+            </div>
+          </div>
+          <div class="coaching-item">
+            <div class="coaching-dot dot-green"></div>
+            <div>
+              <div class="coaching-text">When the property is clean, guests respond very positively — a 5/5 anniversary review and a 4/5 couples getaway review both praised the setting and experience.</div>
+              <div class="coaching-count">Positive recent reviews show the property's potential when issues are resolved</div>
+            </div>
+          </div>
+        </div>
+        <div class="not-shown-box">
+          <strong>Not shown to Ganesh:</strong> direct attribution of the cleanliness failures to him personally — root cause is the vendor. The walkthrough gap is shown as a process improvement, not a personal failing.
+        </div>
+      </div>
+    </div>
+
+    <!-- ── BUSINESS VIEW ── -->
+    <div id="view-business-view" class="view">
+      <div class="view-title">Business Portfolio View</div>
+      <div class="view-subtitle">Normalised performance, flag types, and signals for portfolio decisions. Business acts on patterns — not individual issues.</div>
+
+      <div class="data-notice">
+        <strong>Key distinction for Business:</strong> Low scores driven by listing accuracy or infrastructure call for different investments than scores driven by hospitality or vendor failures. The flag type tells you what kind of fix is needed — and who owns it. Two properties at 2.7 are not the same problem.
+      </div>
+
+      <div class="biz-card">
+        <div class="biz-row">
+          <div class="biz-prop-name">Backwater Bungalow <div class="biz-prop-loc">Alleppey, Kerala</div></div>
+          <div class="biz-score-bar"><div class="biz-score-fill fill-good" style="width:86%"></div></div>
+          <div class="biz-score-num" style="color:#3fb950">4.32</div>
+          <div class="biz-reviews">7 reviews</div>
+          <div class="biz-flags"><span class="biz-flag flag-clean">No ops issues</span></div>
+        </div>
+      </div>
+
+      <div class="biz-card">
+        <div class="biz-row">
+          <div class="biz-prop-name">Serenity Villa <div class="biz-prop-loc">Assagao, Goa</div></div>
+          <div class="biz-score-bar"><div class="biz-score-fill fill-good" style="width:82%"></div></div>
+          <div class="biz-score-num" style="color:#3fb950">4.09</div>
+          <div class="biz-reviews">7 reviews</div>
+          <div class="biz-flags"><span class="biz-flag flag-ops">Ops: pool (partial resolution)</span></div>
+        </div>
+      </div>
+
+      <div class="biz-card">
+        <div class="biz-row">
+          <div class="biz-prop-name">Coorg Canopy <div class="biz-prop-loc">Madikeri, Karnataka</div></div>
+          <div class="biz-score-bar"><div class="biz-score-fill fill-warn" style="width:71%"></div></div>
+          <div class="biz-score-num" style="color:#f0a500">3.55</div>
+          <div class="biz-reviews">5 reviews</div>
+          <div class="biz-flags">
+            <span class="biz-flag flag-caretaker">Caretaker: check-in delays</span>
+            <span class="biz-flag flag-listing">Listing: road access disclosure</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="biz-card">
+        <div class="biz-row">
+          <div class="biz-prop-name">Cliffside Retreat <div class="biz-prop-loc">Kasauli, Himachal Pradesh</div></div>
+          <div class="biz-score-bar"><div class="biz-score-fill fill-warn" style="width:71%"></div></div>
+          <div class="biz-score-num" style="color:#f0a500">3.54</div>
+          <div class="biz-reviews">6 reviews</div>
+          <div class="biz-flags">
+            <span class="biz-flag flag-ops">Ops: heating (recurring · urgent)</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="biz-card">
+        <div class="biz-row">
+          <div class="biz-prop-name">Misty Estate <div class="biz-prop-loc">Chikmagalur, Karnataka</div></div>
+          <div class="biz-score-bar"><div class="biz-score-fill fill-warn" style="width:67%"></div></div>
+          <div class="biz-score-num" style="color:#f0a500">3.36</div>
+          <div class="biz-reviews">7 reviews</div>
+          <div class="biz-flags">
+            <span class="biz-flag flag-caretaker">Caretaker: check-in delays</span>
+            <span class="biz-flag flag-infra">Infra: hot water (watchlist)</span>
+            <span class="biz-flag flag-listing">Listing: bedroom count</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="biz-card">
+        <div class="biz-row">
+          <div class="biz-prop-name">Vineyard Villa <div class="biz-prop-loc">Nashik, Maharashtra</div></div>
+          <div class="biz-score-bar"><div class="biz-score-fill fill-bad" style="width:56%"></div></div>
+          <div class="biz-score-num" style="color:#f85149">2.79</div>
+          <div class="biz-reviews">7 reviews</div>
+          <div class="biz-flags">
+            <span class="biz-flag flag-vendor">Vendor: cleanliness (recurring)</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="biz-card">
+        <div class="biz-row">
+          <div class="biz-prop-name">Hilltop Haven <div class="biz-prop-loc">Lonavala, Maharashtra</div></div>
+          <div class="biz-score-bar"><div class="biz-score-fill fill-bad" style="width:54%"></div></div>
+          <div class="biz-score-num" style="color:#f85149">2.68</div>
+          <div class="biz-reviews">7 reviews</div>
+          <div class="biz-flags">
+            <span class="biz-flag flag-infra">Infra: WiFi (recurring)</span>
+            <span class="biz-flag flag-listing">Listing: photo accuracy</span>
+            <span class="biz-flag flag-policy">Policy: occupancy communication</span>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top:20px; background:#161b22; border:1px solid #30363d; border-radius:10px; padding:16px;">
+        <div style="font-size:13px; font-weight:600; color:#f0a500; margin-bottom:10px;">What score alone doesn't tell you</div>
+        <div style="font-size:13px; color:#8b949e; line-height:1.7;">
+          <strong style="color:#e6edf3;">Vineyard Villa (2.79) vs Hilltop Haven (2.68):</strong> Scores look similar. They're not the same problem. Vineyard's issue is a third-party housekeeping vendor — fix is vendor audit or replacement, no physical investment needed. Hilltop's problems are WiFi infrastructure, listing photo inaccuracy, and policy communication — three separate owners, all needing attention simultaneously. Business should not apply the same decision to both.
+          <br><br>
+          <strong style="color:#e6edf3;">Cliffside Retreat (3.54) — highest urgency per fix-cost ratio:</strong> Score is in the warning zone but the problem is a single infrastructure failure (heating). One contractor visit + checklist update is a tractable fix. If not resolved before the next winter season, expect score deterioration to accelerate.
+          <br><br>
+          <strong style="color:#e6edf3;">Hilltop Haven (2.68) — highest reputational risk:</strong> A guest in May 2026 cited prior reviews as the reason for their expectations — the low scores are now self-reinforcing. Every unresolved review that surfaces on the listing pushes the next booking decision. Time-sensitive.
+          <br><br>
+          <strong style="color:#e6edf3;">Backwater Bungalow (4.32) — benchmark:</strong> Biju Thomas's caretaker-driven differentiation shows what the ceiling looks like with no infrastructure issues. Useful reference when evaluating whether a property's score floor is caretaker-driven or infrastructure-driven.
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+function showView(name, btn) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('view-' + name).classList.add('active');
+  btn.classList.add('active');
+}
+
+function toggleCard(id) {
+  const card = document.getElementById('card-' + id);
+  const evidence = document.getElementById('evidence-' + id);
+  card.classList.toggle('expanded');
+  evidence.classList.toggle('show');
+}
+</script>
+</body>
+</html>
